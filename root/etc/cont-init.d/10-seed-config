@@ -1,0 +1,26 @@
+#!/bin/sh
+# Seed /config/config.yml from the shipped template on first start.
+#
+# blocky refuses to start without a config, so an image with no default could
+# not pass its own CIT and would crash-loop for anyone who just pulled it.
+# Conditional and never overwrites: mount your own config and this does nothing.
+set -eu
+
+CONFIG=/config/config.yml
+TEMPLATE=/usr/local/share/blocky/config.yml.default
+
+if [ ! -f "$TEMPLATE" ]; then
+    echo "[FATAL] $TEMPLATE is missing from the image. This is a packaging bug."
+    exit 1
+fi
+
+mkdir -p /config
+
+if [ -f "$CONFIG" ]; then
+    echo "[INFO] Using existing /config/config.yml (template not applied)."
+    exit 0
+fi
+
+cp "$TEMPLATE" "$CONFIG"
+echo "[INFO] Seeded /config/config.yml from the shipped default (Cloudflare +"
+echo "[INFO] Quad9 over DoT, StevenBlack denylist). Edit it, then restart."

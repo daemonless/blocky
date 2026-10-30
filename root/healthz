@@ -1,0 +1,14 @@
+#!/bin/sh
+# Daemonless healthcheck for blocky.
+#
+# Uses upstream's own subcommand rather than an HTTP probe because it checks
+# what matters: it sends a real A query over TCP to the configured ports.dns.
+# An HTTP 200 from :4000 would only prove the REST server is up, and blocky can
+# serve that while its DNS listener is broken. Reads BLOCKY_CONFIG_FILE for the
+# port, falling back to 127.0.0.1:53.
+#
+# Called by scripts/smoke-test.sh (via podman exec) and by external tooling via
+# the io.daemonless.healthcheck-url label. NOT called by CIT, which polls
+# /api/blocking/status over HTTP, and not by the container itself — there is no
+# HEALTHCHECK instruction. See BUILD-NOTES.md for what that costs at runtime.
+exec blocky healthcheck

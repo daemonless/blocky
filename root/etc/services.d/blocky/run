@@ -1,0 +1,26 @@
+#!/bin/sh
+# blocky — DNS on :53 (UDP+TCP), REST API and metrics on :4000.
+#
+# Bare `blocky` is the serve command (cmd/root.go delegates to it), and the
+# config path comes from BLOCKY_CONFIG_FILE. Do NOT add --config: blocky only
+# reads that env var while --config is at its default, so the flag would
+# silently disable the documented override.
+#
+# Runs as root, deliberately — the only image here that does. blocky binds :53
+# and FreeBSD reserves ports <1024 to root with no way to delegate a single
+# port. Upstream solves this on Linux with cap_net_bind_service; there is no
+# FreeBSD equivalent. The alternatives, and why the high-port one is rejected
+# here but right under plain podman, are in BUILD-NOTES.md.
+#
+# Config validity is not checked here: `blocky validate` runs upstream's real
+# loader against the shipped template at build time, which a hand-rolled grep
+# could only get wrong.
+#
+# Blocklist load failures are SILENT by design (blocking.loading.strategy:
+# fast serves DNS before lists are ready, so an outage can't take DNS down).
+# Don't infer filtering works from the service being up — check
+# blocky_denylist_cache_entries and blocky_failed_downloads_total on :4000/metrics.
+set -u
+
+echo "[INFO] Starting blocky (config ${BLOCKY_CONFIG_FILE}), DNS on :53, API on :4000..."
+exec blocky

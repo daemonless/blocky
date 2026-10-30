@@ -1,0 +1,51 @@
+name: blocky
+
+x-daemonless:
+  class: "service"
+  title: "Blocky"
+  icon: ":material-dns:"
+  category: "Networking"
+  description: "Fast and lightweight DNS proxy and ad-blocker for the local network, on FreeBSD."
+  upstream_url: "https://github.com/0xERR0R/blocky"
+  web_url: "https://0xerr0r.github.io/blocky/"
+  freshports_url: "https://www.freshports.org/dns/blocky/"
+  # Runs as root: blocky binds :53 and FreeBSD reserves ports <1024 to root.
+  user: "root"
+  mlock: false
+  appjail: true
+
+  docs:
+    env:
+      TZ: "Timezone for the container"
+      # Do NOT document BLOCKY_CONFIG_FILE here: dbuild renders documented-but-
+      # unset keys as `VAR=`, and blocky reads it with os.LookupEnv, so an empty
+      # value wins and every copy-pasted snippet crash-loops.
+    volumes:
+      # Keep this value slash-free after /config: lint-compose.sh matches the
+      # last slash on the line to recover the path.
+      /config: "Your config.yml — optional, the image ships a working default that resolves and blocks ads. Must be writable; a read-only mount stops the container"
+    ports:
+      53: "DNS (UDP and TCP)"
+      4000: "REST API and Prometheus metrics"
+
+services:
+  blocky:
+    image: ghcr.io/daemonless/blocky:latest
+    container_name: blocky
+    restart: unless-stopped
+
+    environment:
+      - TZ=Etc/UTC
+
+    # Must be read-write: the base image chowns /config on start, and that
+    # failing on a :ro mount stops the container. (Upstream's docs say :ro is
+    # fine — true of their scratch image, which has no init system.)
+    volumes:
+      - ./config:/config
+
+    # 4000 first because it is the port the catalogue declares. Host :53 usually
+    # collides with a local resolver; change the host side if so.
+    ports:
+      - 4000:4000
+      - 53:53/udp
+      - 53:53/tcp

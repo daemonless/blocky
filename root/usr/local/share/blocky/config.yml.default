@@ -1,0 +1,63 @@
+# blocky default configuration — template, seeded to /config/config.yml on
+# first start by /etc/cont-init.d/10-seed-config, and never overwriting.
+# Mount your own /config/config.yml to replace it. Nothing here is a
+# recommendation about whose resolvers to trust.
+
+# Resolves denylist URLs and upstream hostnames, bypassing /etc/resolv.conf.
+# Required in a container: resolv.conf is inherited from the host and often says
+# nameserver 127.0.0.1, which inside the container is blocky itself — so without
+# this blocky asks itself to resolve the list it needs in order to start.
+# Plain IPs only, or the loop comes back.
+bootstrapDns:
+  - tcp+udp:1.1.1.1
+  - tcp+udp:9.9.9.9
+
+upstreams:
+  init:
+    # Serve immediately; resolve upstreams in the background. The default,
+    # `blocking`, refuses to answer until every upstream is probed.
+    strategy: fast
+  groups:
+    default:
+      # DoT, certificate pinned via #commonname. blocky picks 2 per query.
+      - tcp-tls:1.1.1.1:853#cloudflare-dns.com
+      - tcp-tls:9.9.9.9:853#dns.quad9.net
+      # Plain-DNS fallbacks for networks that block outbound :853.
+      - 1.1.1.1
+      - 9.9.9.9
+
+blocking:
+  denylists:
+    ads:
+      - https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
+  clientGroupsBlock:
+    default:
+      - ads
+  # blockType is left at its default, zeroIp (0.0.0.0). nxDomain makes a blocked
+  # ad look like a broken domain; upstream warns `refused` makes stub resolvers
+  # fall back to another server, bypassing blocking entirely.
+
+  # `loading` nests under `blocking` — a top-level one fails validation.
+  loading:
+    # A list that fails to download must not take DNS down with it.
+    strategy: fast
+    downloads:
+      # Generous vs the 5s default: the StevenBlack list is large.
+      timeout: 60s
+      attempts: 3
+      cooldown: 10s
+
+ports:
+  # Binding :53 is why this image runs as root. :4000 serves the REST API
+  # (base path /api) and Prometheus metrics.
+  dns: 53
+  http: 4000
+
+prometheus:
+  # The only way to see the denylist entry count, which is the one number that
+  # tells you filtering actually loaded.
+  enable: true
+
+log:
+  level: info
+  format: text

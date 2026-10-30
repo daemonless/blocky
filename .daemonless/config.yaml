@@ -1,0 +1,21 @@
+# dbuild configuration — blocky
+# Full reference: https://github.com/daemonless/dbuild
+
+build:
+  variants:
+    # One variant: quarterly and latest carry the same blocky, so a second
+    # would build a byte-identical image under another tag.
+    - tag: latest
+      containerfile: Containerfile
+      default: true
+
+cit:
+  # /api/blocking/status, not /: the :4000 listener is a REST API with base path
+  # /api and has no `/` route. Proves blocky is UP, not that it resolves —
+  # scripts/smoke-test.sh covers that.
+  mode: health
+  port: 4000
+  health: /api/blocking/status
+  # blocky logs "<proto> server is up and running on addr/port <addr>"; dbuild's
+  # default patterns don't match it, which would burn the full wait.
+  ready: "server is up and running"

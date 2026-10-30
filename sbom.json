@@ -1,11 +1,11 @@
 {
-  "generated": "2026-10-30T23:49:27Z",
+  "generated": "2026-10-30T23:56:16Z",
   "image": "blocky",
   "tags": {
     "latest": {
       "app_version": "0.35.0_2",
       "arch": "amd64",
-      "generated": "2026-10-30T23:48:56Z",
+      "generated": "2026-10-30T23:55:32Z",
       "packages": {
         "dotnet": [],
         "freebsd": [

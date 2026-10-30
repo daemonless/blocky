@@ -4,7 +4,7 @@ x-daemonless:
   class: "service"
   title: "Blocky"
   icon: ":material-dns:"
-  category: "Networking"
+  category: "Network"
   description: "Fast and lightweight DNS proxy and ad-blocker for the local network, on FreeBSD."
   upstream_url: "https://github.com/0xERR0R/blocky"
   web_url: "https://0xerr0r.github.io/blocky/"

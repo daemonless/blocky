@@ -7,6 +7,7 @@ Source: dbuild templates
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/daemonless/blocky/build.yaml?style=flat-square&label=Build&color=green)](https://github.com/daemonless/blocky/actions)
 [![Last Commit](https://img.shields.io/github/last-commit/daemonless/blocky?style=flat-square&label=Last+Commit&color=blue)](https://github.com/daemonless/blocky/commits)
+[![OCI Pulls](https://img.shields.io/docker/pulls/daemonless/blocky?style=flat-square&label=OCI+Pulls&color=blue)](https://hub.docker.com/r/daemonless/blocky)
 
 Fast and lightweight DNS proxy and ad-blocker for the local network, on FreeBSD.
 
@@ -20,7 +21,7 @@ Fast and lightweight DNS proxy and ad-blocker for the local network, on FreeBSD.
 ## Version Tags
 | Tag | Description | Best For |
 | :--- | :--- | :--- |
-| `latest` | **Upstream Binary**. Built from official release. | Most users. Matches Linux Docker behavior. |
+| `latest` | **Upstream Binary**. Built from official release. | Most users — recommended. |
 
 ## Prerequisites
 Before deploying, ensure your host environment is ready. See the [Quick Start Guide](https://daemonless.io/guides/quick-start) for host setup instructions.
@@ -37,13 +38,16 @@ services:
     environment:
       - TZ=Etc/UTC  # Timezone for the container
     volumes:
-      - "/path/to/containers/blocky:/config"
+      - "/containers/blocky:/config"
     ports:
       - "4000:4000"
       - "53:53"
       - "53:53"
-    restart: unless-stopped
+    # always (not unless-stopped) so FreeBSD's podman rc.d auto-starts it at boot
+    restart: always
 ```
+
+Save as `compose.yaml`, then run `podman-compose up -d`.
 
 ### AppJail Director
 **.env**:
@@ -67,10 +71,10 @@ services:
   blocky:
     name: blocky
     options:
-      - container: 'boot args:--pull'
-      - expose: '4000:4000 proto:tcp' \
-      - expose: '53:53 proto:udp' \
-      - expose: '53:53 proto:tcp' \
+      - container: 'args:--pull'
+      - expose: '4000:4000 proto:tcp'
+      - expose: '53:53 proto:udp'
+      - expose: '53:53 proto:tcp'
     oci:
       user: root
       environment:
@@ -79,7 +83,7 @@ services:
       - blocky: /config
 volumes:
   blocky:
-    device: '/path/to/containers/blocky'
+    device: '/containers/blocky'
 ```
 
 **Makejail**:
@@ -89,60 +93,39 @@ volumes:
 
 ARG tag=latest
 
+OPTION container=boot
 OPTION overwrite=force
 OPTION from=ghcr.io/daemonless/blocky:${tag}
 ```
-**Note**: Exposing ports in AppJail means that your service can be reached from remote hosts. If that is not your intention, do not expose the ports and communicate with the service using the IPv4 address assigned by the virtual network.
 
-### Podman CLI
+Save the files above, then run `appjail-director up`.
 
-```bash
-podman run -d --name blocky \
-  -p 4000:4000 \
-  -p 53:53 \
-  -p 53:53 \
-  -e TZ=Etc/UTC \
-  -v /path/to/containers/blocky:/config \
-  ghcr.io/daemonless/blocky:latest
-```
 
-### AppJail
+> [!WARNING]
+> Exposing ports in AppJail means that your service can be reached from remote hosts. If that is not your intention, do not expose the ports and communicate with the service using the jail's IPv4 address or hostname assigned by the virtual network.
+>
+> To avoid exposing ports, just remove the `expose` option in your `appjail-director.yml` or from your command-line arguments.
 
-```bash
-appjail oci run -Pd \
-  -o overwrite=force \
-  -o container="args:--pull" \
-  -o virtualnet=":<random> default" \
-  -o nat \
-  -o expose="4000:4000 proto:tcp" \
-  -o expose="53:53 proto:udp" \
-  -o expose="53:53 proto:tcp" \
-  -e TZ=Etc/UTC \
-  -o fstab="/path/to/containers/blocky /config <pseudofs>" \
-  ghcr.io/daemonless/blocky:latest blocky
-```
-**Note**: Exposing ports in AppJail means that your service can be reached from remote hosts. If that is not your intention, do not expose the ports and communicate with the service using the IPv4 address assigned by the virtual network.
+### Bastille
 
-### Ansible
+> [!WARNING]
+> Bastille's OCI support is **experimental**. It requires `buildah` and shares the host network stack (`inherit`). Mount volumes with `--volume HOST JAIL`; without it, image-declared volumes are stored under `${bastille_volumesdir}/${jail}`.
 
 ```yaml
-- name: Deploy blocky
-  containers.podman.podman_container:
+services:
+  blocky:
     name: blocky
     image: "ghcr.io/daemonless/blocky:latest"
-    state: started
-    restart_policy: always
-    env:
-      TZ: "Etc/UTC"
-    ports:
-      - "4000:4000"
-      - "53:53"
-      - "53:53"
+    network:
+      - mode: host
+    environment:
+      - TZ=Etc/UTC
     volumes:
-      - "/path/to/containers/blocky:/config"
+      - "/containers/blocky:/config"
 ```
 
-Access at: `http://localhost:4000`
+Save as `bastille-compose.yml`, then run `bastille up`.
+Open `http://<server>:4000` from another machine (the server's own browser can't use a published port).
 
 ## Parameters
 

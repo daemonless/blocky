@@ -10,11 +10,16 @@
 
 ARG BASE_VERSION=15
 
+# base-exec, not base: blocky is ONE process, and the project is moving off s6.
+# /init runs /daemonless/custom.d/* then execs CMD, with no supervisor — a crash
+# exits the container and the runtime's restart policy brings it back
+# (compose.yaml sets restart: unless-stopped).
+#
 # Tag 15 = lowest supported minor (FreeBSD ABI compat is backward-only) and the
 # default `quarterly` pkg branch. No /quarterly -> /latest override: both
 # packages below are in quarterly at the same versions as latest (measured;
 # see build.log). Re-check on a bump.
-FROM ghcr.io/daemonless/base:${BASE_VERSION}
+FROM ghcr.io/daemonless/base-exec:${BASE_VERSION}
 
 ARG FREEBSD_ARCH=amd64
 ARG PKG_NAME="blocky"
@@ -24,10 +29,6 @@ ARG PKG_NAME="blocky"
 # blocky still starts and serves, having silently lost filtering and encryption.
 ARG PACKAGES="blocky ca_root_nss"
 
-# The release this image claims to be. Not a pin — asserted below, so a pkg
-# branch move fails the build instead of silently shipping a different blocky.
-ARG EXPECTED_VERSION="0.35.0"
-
 ARG HEALTHCHECK_ENDPOINT="http://localhost:4000/api/blocking/status"
 ENV HEALTHCHECK_URL="${HEALTHCHECK_ENDPOINT}"
 
@@ -36,6 +37,12 @@ ENV HEALTHCHECK_URL="${HEALTHCHECK_ENDPOINT}"
 # --config is at its flag default (cmd/root.go), so passing it would silently
 # disable the documented override.
 ENV BLOCKY_CONFIG_FILE="/config/config.yml"
+
+# Stay root instead of /init's default drop to `bsd` via dsu. blocky binds :53
+# and FreeBSD reserves ports <1024 to root with no capability mechanism to
+# delegate one; base-exec's /init documents root-only images setting this.
+# Alternatives considered and why the high-port one is rejected: BUILD-NOTES.md.
+ENV DAEMONLESS_USER=root
 
 LABEL org.opencontainers.image.title="Blocky" \
       org.opencontainers.image.description="Fast and lightweight DNS proxy and ad-blocker for the local network, on FreeBSD" \
@@ -53,32 +60,26 @@ LABEL org.opencontainers.image.title="Blocky" \
       io.daemonless.pkg-name="${PKG_NAME}" \
       io.daemonless.packages="${PACKAGES}"
 
-# `pkg query '%v'` returns exactly the version field; `pkg info | sed` would be
-# an unanchored match on a multi-field report. The case allows the port-revision
-# suffix (0.35.0_2 matches 0.35.0).
+# No version pin or assertion, deliberately: pkg installs whatever the branch
+# carries and /app/version records it, which is what lets dbuild detect the
+# version (via io.daemonless.pkg-name) and auto-update on rebuild. `pkg query
+# '%v'` returns exactly the version field; `pkg info | sed` would be an
+# unanchored match on a multi-field report.
 RUN pkg update && pkg install -y ${PACKAGES} \
     && mkdir -p /app /config \
     && pkg query '%v' ${PKG_NAME} > /app/version \
     && test -s /app/version \
-    && installed="$(cat /app/version)" \
-    && case "${installed}" in \
-         "${EXPECTED_VERSION}"|"${EXPECTED_VERSION}_"*) \
-           echo "[guard] ${PKG_NAME} ${installed} matches expected ${EXPECTED_VERSION}" ;; \
-         *) \
-           echo "ERROR: installed ${PKG_NAME} ${installed} != expected ${EXPECTED_VERSION}." >&2; \
-           echo "       The pkg branch moved. Bump EXPECTED_VERSION and the docs together." >&2; \
-           exit 1 ;; \
-       esac \
     && chmod -R a+rX /app \
     && pkg clean -ay && rm -rf /var/cache/pkg/* /var/db/pkg/repos/*
 
 COPY root/ /
 
-RUN chmod +x /etc/services.d/blocky/run /etc/cont-init.d/10-seed-config /healthz
+RUN chmod +x /daemonless/custom.d/10-seed-config /healthz
 
-# Guard: the run script and /healthz invoke bare `blocky` off PATH. Note the
-# port installs to ${PREFIX}/sbin, not bin — fine while this runs as root, but
-# a future s6-setuidgid would need an absolute path.
+# Guard: CMD and /healthz invoke bare `blocky` off PATH. Note the port installs
+# to ${PREFIX}/sbin, not bin — fine while this runs as root, but if
+# DAEMONLESS_USER ever becomes `bsd`, /usr/local/sbin is typically not on an
+# unprivileged PATH and this would need an absolute path.
 RUN command -v blocky >/dev/null \
     && blocky version
 
@@ -91,11 +92,14 @@ RUN test -f /usr/local/share/blocky/config.yml.default \
     && blocky validate --config /tmp/config-check.yml \
     && rm /tmp/config-check.yml
 
-# No USER: blocky binds :53 and FreeBSD reserves ports <1024 to root with no
-# capability mechanism to delegate one. See the run script.
-
 EXPOSE 53/udp
 EXPOSE 53/tcp
 EXPOSE 4000/tcp
 
 VOLUME /config
+
+# Bare `blocky` is the serve command (cmd/root.go delegates to it), which is why
+# upstream's own Dockerfile has no subcommand. /init execs this. Do NOT add
+# --config: blocky only reads BLOCKY_CONFIG_FILE while --config is at its flag
+# default, so the flag would silently disable the documented override.
+CMD ["blocky"]

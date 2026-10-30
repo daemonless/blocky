@@ -1,5 +1,6 @@
 #!/bin/sh
 # Seed /config/config.yml from the shipped template on first start.
+# Runs from /daemonless/custom.d by base-exec's /init, before it execs CMD.
 #
 # blocky refuses to start without a config, so an image with no default could
 # not pass its own CIT and would crash-loop for anyone who just pulled it.
@@ -22,5 +23,16 @@ if [ -f "$CONFIG" ]; then
 fi
 
 cp "$TEMPLATE" "$CONFIG"
+
+# Chown explicitly rather than relying on run order. base-exec's /init runs ALL
+# of /daemonless/init.d — including 10-usermod, which chowns /config to
+# PUID:PGID — before any of custom.d, so a file created here stays root-owned
+# and fails CIT's PUID check. (Under the old s6 base both scripts shared
+# /etc/cont-init.d and 10-seed-config merely sorted first, which was luck.)
+# `bsd` is already remapped to PUID:PGID by 10-usermod, so this lands on the
+# right numeric ids. Skipped when the runtime set a non-root user.
+if [ "$(id -u)" = 0 ]; then
+    chown bsd:bsd "$CONFIG" 2>/dev/null || true
+fi
 echo "[INFO] Seeded /config/config.yml from the shipped default (Cloudflare +"
 echo "[INFO] Quad9 over DoT, StevenBlack denylist). Edit it, then restart."

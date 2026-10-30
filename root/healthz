@@ -7,6 +7,7 @@
 # serve that while its DNS listener is broken. Reads BLOCKY_CONFIG_FILE for the
 # port, falling back to 127.0.0.1:53.
 #
+# Overrides base-exec's generic /healthz, which just fetches HEALTHCHECK_URL.
 # Called by scripts/smoke-test.sh (via podman exec) and by external tooling via
 # the io.daemonless.healthcheck-url label. NOT called by CIT, which polls
 # /api/blocking/status over HTTP, and not by the container itself — there is no

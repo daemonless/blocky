@@ -1,11 +1,11 @@
 {
-  "generated": "2026-10-30T23:20:30Z",
+  "generated": "2026-10-30T23:49:27Z",
   "image": "blocky",
   "tags": {
     "latest": {
       "app_version": "0.35.0_2",
       "arch": "amd64",
-      "generated": "2026-10-30T23:19:59Z",
+      "generated": "2026-10-30T23:48:56Z",
       "packages": {
         "dotnet": [],
         "freebsd": [
@@ -263,13 +263,6 @@
           },
           {
             "licenses": [
-              "ISCL"
-            ],
-            "name": "execline",
-            "version": "2.9.8.1"
-          },
-          {
-            "licenses": [
               "MIT"
             ],
             "name": "jq",
@@ -288,20 +281,6 @@
             ],
             "name": "pkg",
             "version": "2.8.4"
-          },
-          {
-            "licenses": [
-              "ISCL"
-            ],
-            "name": "s6",
-            "version": "2.14.0.1"
-          },
-          {
-            "licenses": [
-              "ISCL"
-            ],
-            "name": "skalibs",
-            "version": "2.14.5.1"
           }
         ],
         "go": [
@@ -716,7 +695,7 @@
       "source": "upstream",
       "summary": {
         "dotnet": 0,
-        "freebsd": 42,
+        "freebsd": 39,
         "go": 80,
         "java": 0,
         "node": 0,
@@ -724,7 +703,7 @@
         "python": 0,
         "ruby": 0,
         "rust": 0,
-        "total": 122
+        "total": 119
       }
     }
   }

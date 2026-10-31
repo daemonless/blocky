@@ -3,11 +3,14 @@
 
 build:
   variants:
-    # One variant: quarterly and latest carry the same blocky, so a second
-    # would build a byte-identical image under another tag.
-    - tag: latest
+    - tag: pkg
       containerfile: Containerfile
       default: true
+      aliases: [latest]
+    - tag: pkg-latest
+      containerfile: Containerfile
+      args:
+        BASE_VERSION: "15-latest"
 
 cit:
   # /api/blocking/status, not /: the :4000 listener is a REST API with base path

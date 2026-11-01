@@ -32,7 +32,7 @@ ARG PACKAGES="blocky ca_root_nss"
 ARG HEALTHCHECK_ENDPOINT="http://localhost:4000/api/blocking/status"
 ENV HEALTHCHECK_URL="${HEALTHCHECK_ENDPOINT}"
 
-# The single live config path, seeded by /etc/cont-init.d/10-seed-config.
+# The single live config path, seeded by /daemonless/custom.d/10-seed-config.
 # Do NOT add --config to the run script: blocky only reads this env var while
 # --config is at its flag default (cmd/root.go), so passing it would silently
 # disable the documented override.

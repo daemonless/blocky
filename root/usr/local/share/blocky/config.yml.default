@@ -1,5 +1,5 @@
 # blocky default configuration — template, seeded to /config/config.yml on
-# first start by /etc/cont-init.d/10-seed-config, and never overwriting.
+# first start by /daemonless/custom.d/10-seed-config, and never overwriting.
 # Mount your own /config/config.yml to replace it. Nothing here is a
 # recommendation about whose resolvers to trust.
 

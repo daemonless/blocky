@@ -21,7 +21,8 @@ Fast and lightweight DNS proxy and ad-blocker for the local network, on FreeBSD.
 ## Version Tags
 | Tag | Description | Best For |
 | :--- | :--- | :--- |
-| `latest` | **Upstream Binary**. Built from official release. | Most users — recommended. |
+| `latest` / `pkg` | **FreeBSD Port**. Built from FreeBSD packages. | Most users — recommended. |
+| `pkg-latest` | **FreeBSD Latest**. Rolling package updates. | Staying current. |
 
 ## Prerequisites
 Before deploying, ensure your host environment is ready. See the [Quick Start Guide](https://daemonless.io/guides/quick-start) for host setup instructions.
@@ -41,7 +42,7 @@ services:
       - "/containers/blocky:/config"
     ports:
       - "4000:4000"
-      - "53:53"
+      - "53:53/udp"
       - "53:53"
     # always (not unless-stopped) so FreeBSD's podman rc.d auto-starts it at boot
     restart: always
@@ -150,7 +151,7 @@ Open `http://<server>:4000` from another machine (the server's own browser can't
 | `53` | TCP | DNS (UDP and TCP) |
 
 **Architectures:** amd64
-**User:** `root` (UID/GID via PUID/PGID, defaults to 1000:1000)
+**User:** `root` — the service process stays root by design, not dropped to `bsd`
 **Base:** FreeBSD 15
 
 ---

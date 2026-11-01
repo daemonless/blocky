@@ -12,6 +12,7 @@ x-daemonless:
   # Runs as root: blocky binds :53 and FreeBSD reserves ports <1024 to root.
   user: "root"
   mlock: false
+  upstream_binary: false
   # The daemonless Discord, not blocky's own — settled on stump#1: community is
   # where someone gets help with THIS image. It is also dbuild's DEFAULT_COMMUNITY.
   community: "Discord:https://discord.gg/Kb9tkhecZT"

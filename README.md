@@ -42,7 +42,7 @@ services:
       - "/containers/blocky:/config"
     ports:
       - "4000:4000"
-      - "53:53/udp"
+      - "53:53"
       - "53:53"
     # always (not unless-stopped) so FreeBSD's podman rc.d auto-starts it at boot
     restart: always
@@ -151,7 +151,7 @@ Open `http://<server>:4000` from another machine (the server's own browser can't
 | `53` | TCP | DNS (UDP and TCP) |
 
 **Architectures:** amd64
-**User:** `root` — the service process stays root by design, not dropped to `bsd`
+**User:** `root` (UID/GID via PUID/PGID, defaults to 1000:1000)
 **Base:** FreeBSD 15
 
 ---

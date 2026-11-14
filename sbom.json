@@ -1,11 +1,11 @@
 {
-  "generated": "2026-11-04T11:57:05Z",
+  "generated": "2026-11-14T21:56:16Z",
   "image": "blocky",
   "tags": {
     "pkg": {
       "app_version": "0.35.0_2",
       "arch": "amd64",
-      "generated": "2026-11-04T11:56:32Z",
+      "generated": "2026-11-14T21:54:35Z",
       "packages": {
         "dotnet": [],
         "freebsd": [
@@ -707,9 +707,9 @@
       }
     },
     "pkg-latest": {
-      "app_version": "0.35.0_2",
+      "app_version": "0.35.0_3",
       "arch": "amd64",
-      "generated": "2026-11-04T11:56:32Z",
+      "generated": "2026-11-14T21:54:22Z",
       "packages": {
         "dotnet": [],
         "freebsd": [
@@ -956,7 +956,7 @@
               "APACHE20"
             ],
             "name": "blocky",
-            "version": "0.35.0_2"
+            "version": "0.35.0_3"
           },
           {
             "licenses": [
@@ -984,7 +984,7 @@
               "BSD2CLAUSE"
             ],
             "name": "pkg",
-            "version": "2.8.4"
+            "version": "2.9.0"
           }
         ],
         "go": [
@@ -1386,7 +1386,7 @@
           {
             "name": "stdlib",
             "purl": "",
-            "version": "v1.27.3"
+            "version": "v1.27.4"
           }
         ],
         "java": [],
